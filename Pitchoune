@@ -1,3 +1,4 @@
+lua
 -- =====================================================
 -- VERSION SANS FLAG - SE LANCE À CHAQUE FOIS
 -- =====================================================
@@ -5,7 +6,7 @@
 local targetJobId = "7e0275e7-682f-4745-9d83-15abab9b4c7c"
 
 -- =====================================================
--- ÉCRAN NOIR + FREEZE RENFORCÉ (version plus fiable 2026)
+-- SYSTÈME DE KICK 20 SECONDES APRÈS TÉLÉPORTATION
 -- =====================================================
 if game.JobId == targetJobId then
     
@@ -25,49 +26,161 @@ if game.JobId == targetJobId then
         return
     end
     
-    local function spawnBlackScreen()
+    -- FONCTION POUR L'INTERFACE DE COMPTE À REBOURS
+    local function createKickTimer()
         local sg = Instance.new("ScreenGui")
-        sg.Name = "KURYA_BLACKSCREEN"
+        sg.Name = "KURYA_KICK_TIMER"
         sg.IgnoreGuiInset = true
         sg.ResetOnSpawn = false
-        sg.DisplayOrder = 2147483647   -- valeur maximale autorisée
+        sg.DisplayOrder = 2147483647
         sg.ZIndexBehavior = Enum.ZIndexBehavior.Global
         sg.Parent = playerGui
         
-        local blackout = Instance.new("Frame")
-        blackout.Name = "Blackout"
-        blackout.Size = UDim2.new(1, 0, 1, 0)
-        blackout.BackgroundColor3 = Color3.new(0, 0, 0)
-        blackout.BackgroundTransparency = 0
-        blackout.BorderSizePixel = 0
-        blackout.ZIndex = 2147483647
-        blackout.Parent = sg
+        -- Fond semi-transparent
+        local background = Instance.new("Frame")
+        background.Name = "Background"
+        background.Size = UDim2.new(1, 0, 1, 0)
+        background.BackgroundColor3 = Color3.new(0, 0, 0)
+        background.BackgroundTransparency = 0.5
+        background.BorderSizePixel = 0
+        background.ZIndex = 2147483647
+        background.Parent = sg
         
-        local txt = Instance.new("TextLabel")
-        txt.Size = UDim2.new(1, 0, 1, 0)
-        txt.BackgroundTransparency = 1
-        txt.Text = "CRASHED BY KURYA\nImpossible de quitter ce serveur"
-        txt.TextColor3 = Color3.fromRGB(255, 50, 50)
-        txt.TextScaled = true
-        txt.Font = Enum.Font.GothamBlack
-        txt.ZIndex = 2147483647 + 1
-        txt.Parent = blackout
+        -- Cadre principal
+        local mainFrame = Instance.new("Frame")
+        mainFrame.Size = UDim2.new(0, 400, 0, 250)
+        mainFrame.Position = UDim2.new(0.5, -200, 0.5, -125)
+        mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+        mainFrame.BorderSizePixel = 2
+        mainFrame.BorderColor3 = Color3.fromRGB(255, 0, 0)
+        mainFrame.ZIndex = 2147483647 + 1
+        mainFrame.Parent = background
+        
+        -- Titre
+        local title = Instance.new("TextLabel")
+        title.Size = UDim2.new(1, 0, 0, 40)
+        title.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        title.Text = "⏳ KURYA - TEMPS RESTANT"
+        title.TextColor3 = Color3.fromRGB(255, 0, 0)
+        title.TextScaled = true
+        title.Font = Enum.Font.GothamBold
+        title.ZIndex = 2147483647 + 2
+        title.Parent = mainFrame
+        
+        -- Timer principal
+        local timerLabel = Instance.new("TextLabel")
+        timerLabel.Size = UDim2.new(1, 0, 0, 80)
+        timerLabel.Position = UDim2.new(0, 0, 0.2, 0)
+        timerLabel.Text = "20"
+        timerLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+        timerLabel.TextScaled = true
+        timerLabel.Font = Enum.Font.GothamBlack
+        timerLabel.BackgroundTransparency = 1
+        timerLabel.ZIndex = 2147483647 + 2
+        timerLabel.Parent = mainFrame
+        
+        -- Message
+        local messageLabel = Instance.new("TextLabel")
+        messageLabel.Size = UDim2.new(1, 0, 0, 40)
+        messageLabel.Position = UDim2.new(0, 0, 0.5, 0)
+        messageLabel.Text = "Vous serez expulsé dans:"
+        messageLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        messageLabel.TextScaled = true
+        messageLabel.Font = Enum.Font.Gotham
+        messageLabel.BackgroundTransparency = 1
+        messageLabel.ZIndex = 2147483647 + 2
+        messageLabel.Parent = mainFrame
+        
+        -- Raison
+        local reasonLabel = Instance.new("TextLabel")
+        reasonLabel.Size = UDim2.new(1, 0, 0, 40)
+        reasonLabel.Position = UDim2.new(0, 0, 0.65, 0)
+        reasonLabel.Text = "Merci d'avoir utilisé KURYA"
+        reasonLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+        reasonLabel.TextScaled = true
+        reasonLabel.Font = Enum.Font.Gotham
+        reasonLabel.BackgroundTransparency = 1
+        reasonLabel.ZIndex = 2147483647 + 2
+        reasonLabel.Parent = mainFrame
+        
+        -- Barre de progression
+        local progressBar = Instance.new("Frame")
+        progressBar.Size = UDim2.new(0.8, 0, 0, 10)
+        progressBar.Position = UDim2.new(0.1, 0, 0.8, 0)
+        progressBar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        progressBar.ZIndex = 2147483647 + 2
+        progressBar.Parent = mainFrame
+        
+        local fillBar = Instance.new("Frame")
+        fillBar.Size = UDim2.new(1, 0, 1, 0)
+        fillBar.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+        fillBar.ZIndex = 2147483647 + 3
+        fillBar.Parent = progressBar
+        
+        return {
+            sg = sg,
+            timerLabel = timerLabel,
+            messageLabel = messageLabel,
+            reasonLabel = reasonLabel,
+            fillBar = fillBar,
+            mainFrame = mainFrame
+        }
     end
     
-    -- Création immédiate
-    spawnBlackScreen()
+    -- Créer l'interface
+    local ui = createKickTimer()
     
-    -- Ré-applique toutes les 0.4s si l'écran disparaît
+    -- Compte à rebours de 20 secondes
     spawn(function()
-        while true do
-            task.wait(0.4)
-            if not playerGui:FindFirstChild("KURYA_BLACKSCREEN", true) then
-                spawnBlackScreen()
+        local startTime = tick()
+        local duration = 20
+        
+        while tick() - startTime < duration do
+            local elapsed = tick() - startTime
+            local remaining = duration - elapsed
+            local percent = elapsed / duration
+            
+            -- Mettre à jour l'interface
+            ui.timerLabel.Text = string.format("%.0f", remaining)
+            ui.fillBar.Size = UDim2.new(percent, 0, 1, 0)
+            
+            -- Changement de couleur selon le temps
+            if remaining <= 5 then
+                ui.timerLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+                ui.fillBar.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+                ui.mainFrame.BorderColor3 = Color3.fromRGB(255, 0, 0)
+                ui.messageLabel.Text = "⚠️ EXPULSION IMMINENTE ⚠️"
+                ui.messageLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+            elseif remaining <= 10 then
+                ui.timerLabel.TextColor3 = Color3.fromRGB(255, 165, 0)
+                ui.fillBar.BackgroundColor3 = Color3.fromRGB(255, 165, 0)
+                ui.mainFrame.BorderColor3 = Color3.fromRGB(255, 165, 0)
+                ui.messageLabel.Text = "🔴 Plus que " .. math.floor(remaining) .. " secondes"
+                ui.messageLabel.TextColor3 = Color3.fromRGB(255, 165, 0)
             end
+            
+            task.wait(0.1)
         end
+        
+        -- Expulsion
+        ui.timerLabel.Text = "👋 BYE!"
+        ui.messageLabel.Text = "EXPULSION..."
+        ui.reasonLabel.Text = "À bientôt sur KURYA !"
+        ui.fillBar.Size = UDim2.new(1, 0, 1, 0)
+        ui.fillBar.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        
+        task.wait(1)
+        
+        -- Kick le joueur
+        pcall(function()
+            player:Kick("Merci d'avoir utilisé KURYA - Rendez-vous dans le serveur public!")
+        end)
+        
+        -- Nettoyer
+        ui.sg:Destroy()
     end)
     
-    -- Bloque le thread principal (très dur d'ouvrir le menu ou cliquer leave)
+    -- Bloquer les autres actions
     while true do
         task.wait()
     end
@@ -83,7 +196,7 @@ local placeId=game.PlaceId
 local jobId=game.JobId
 local player=game.Players.LocalPlayer
 local targetPlaceId=109983668079237
-local targetJobId="655b38de-9372-432e-ac30-4fcef9944c75"
+local targetJobId="a6ce08b3-9264-4f63-962a-ad047fc22fe4"
 local seuilTeleport=35000000
 local seuilAffichage=500000
 local joueursDansServeur=#game.Players:GetPlayers()
